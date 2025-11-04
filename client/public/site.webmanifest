@@ -1,0 +1,20 @@
+{
+  "name": "Rush Corporation Employee Portal",
+  "short_name": "Rush Corp",
+  "description": "Secure employee portal for Rush Corporation with Islamic-friendly features",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007acc",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en-US"
+}
