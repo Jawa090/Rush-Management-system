@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Attendance</title>
+</head>
+<body>
+    <h1>Attendance Debug Tool</h1>
+    <button onclick="checkAttendance()">Check Attendance Data</button>
+    <button onclick="createAttendance()">Create Attendance</button>
+    <button onclick="clearAttendance()">Clear Attendance</button>
+    <pre id="output"></pre>
+
+    <script>
+        function checkAttendance() {
+            const output = document.getElementById('output');
+            const user = localStorage.getItem('rushcorp_user');
+            const lastAttendance = localStorage.getItem('last_attendance');
+            const today = new Date().toISOString().split('T')[0];
+            
+            let result = '=== ATTENDANCE DEBUG ===\n\n';
+            result += 'Today: ' + today + '\n\n';
+            result += 'User Data:\n' + (user || 'No user found') + '\n\n';
+            result += 'Last Attendance:\n' + (lastAttendance || 'No attendance found') + '\n\n';
+            
+            if (user) {
+                const userData = JSON.parse(user);
+                const attendanceKey = `attendance_${userData.id}_${today}`;
+                const todayAttendance = localStorage.getItem(attendanceKey);
+                result += 'Today\'s Attendance Key: ' + attendanceKey + '\n';
+                result += 'Today\'s Attendance:\n' + (todayAttendance || 'No attendance for today') + '\n\n';
+            }
+            
+            result += '\n=== ALL ATTENDANCE KEYS ===\n';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('attendance_')) {
+                    result += key + ': ' + localStorage.getItem(key) + '\n';
+                }
+            }
+            
+            output.textContent = result;
+        }
+
+        function createAttendance() {
+            const user = localStorage.getItem('rushcorp_user');
+            if (!user) {
+                alert('No user logged in!');
+                return;
+            }
+            
+            const userData = JSON.parse(user);
+            const today = new Date().toISOString().split('T')[0];
+            const attendanceKey = `attendance_${userData.id}_${today}`;
+            
+            const attendanceRecord = {
+                userId: userData.id,
+                userName: `${userData.firstName} ${userData.lastName}`,
+                date: today,
+                checkIn: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                status: 'present',
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem(attendanceKey, JSON.stringify(attendanceRecord));
+            localStorage.setItem('last_attendance', JSON.stringify(attendanceRecord));
+            
+            alert('Attendance created!');
+            checkAttendance();
+        }
+
+        function clearAttendance() {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key.startsWith('attendance_') || key === 'last_attendance') {
+                    localStorage.removeItem(key);
+                }
+            }
+            alert('Attendance cleared!');
+            checkAttendance();
+        }
+
+        // Auto-check on load
+        window.onload = checkAttendance;
+    </script>
+</body>
+</html>

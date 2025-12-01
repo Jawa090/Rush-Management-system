@@ -217,6 +217,22 @@ export default function Login() {
             </CardFooter>
           </Card>
 
+          {/* Admin Credentials Info */}
+          <Card className="mt-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-800">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">Admin Access</p>
+                  <p className="text-xs text-red-700 dark:text-red-300">
+                    <strong>Email:</strong> admin@rushcorp.com<br />
+                    <strong>Password:</strong> Admin@123
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="mt-6 text-center text-xs text-muted-foreground">
             © 2025 Rush Corporation. All rights reserved.
           </div>

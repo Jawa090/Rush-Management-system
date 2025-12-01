@@ -8,6 +8,7 @@ interface User {
   department?: string;
   position?: string;
   avatar?: string;
+  role: 'admin' | 'employee';
 }
 
 interface AuthContextType {
@@ -64,30 +65,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock successful login
-      if (email && password) {
-        const mockUser: User = {
-          id: "1",
+      // Hardcoded admin credentials
+      const ADMIN_EMAIL = "admin@rushcorp.com";
+      const ADMIN_PASSWORD = "Admin@123";
+      
+      let mockUser: User;
+      
+      // Check if admin login
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        mockUser = {
+          id: "admin_001",
+          email: ADMIN_EMAIL,
+          firstName: "Admin",
+          lastName: "User",
+          department: "Administration",
+          position: "System Administrator",
+          role: "admin"
+        };
+      } else if (email && password) {
+        // Regular employee login
+        mockUser = {
+          id: "emp_" + Date.now(),
           email: email,
           firstName: "John",
           lastName: "Doe",
           department: "Information Technology",
-          position: "Software Engineer"
+          position: "Software Engineer",
+          role: "employee"
         };
-        
-        const mockToken = "mock_jwt_token_" + Date.now();
-        
-        // Save to localStorage
-        localStorage.setItem("rushcorp_user", JSON.stringify(mockUser));
-        localStorage.setItem("rushcorp_token", mockToken);
-        
-        setUser(mockUser);
+      } else {
         setIsLoading(false);
-        return true;
+        return false;
       }
       
+      // Mark attendance for all logins (admin and employee)
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceKey = `attendance_${mockUser.id}_${today}`;
+      const existingAttendance = localStorage.getItem(attendanceKey);
+      
+      if (!existingAttendance) {
+        const attendanceRecord = {
+          userId: mockUser.id,
+          userName: `${mockUser.firstName} ${mockUser.lastName}`,
+          date: today,
+          checkIn: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          status: 'present',
+          timestamp: Date.now()
+        };
+        localStorage.setItem(attendanceKey, JSON.stringify(attendanceRecord));
+        localStorage.setItem('last_attendance', JSON.stringify(attendanceRecord));
+      } else {
+        // Update last_attendance even if already checked in today
+        const existingRecord = JSON.parse(existingAttendance);
+        localStorage.setItem('last_attendance', JSON.stringify(existingRecord));
+      }
+      
+      const mockToken = "mock_jwt_token_" + Date.now();
+      
+      // Save to localStorage
+      localStorage.setItem("rushcorp_user", JSON.stringify(mockUser));
+      localStorage.setItem("rushcorp_token", mockToken);
+      
+      setUser(mockUser);
       setIsLoading(false);
-      return false;
+      return true;
     } catch (error) {
       console.error("Login error:", error);
       setIsLoading(false);
@@ -105,12 +146,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Mock successful signup
       if (userData.email && userData.password && userData.firstName && userData.lastName) {
         const mockUser: User = {
-          id: Date.now().toString(),
+          id: "emp_" + Date.now(),
           email: userData.email,
           firstName: userData.firstName,
           lastName: userData.lastName,
           department: userData.department,
-          position: userData.position
+          position: userData.position,
+          role: "employee"
         };
         
         const mockToken = "mock_jwt_token_" + Date.now();
