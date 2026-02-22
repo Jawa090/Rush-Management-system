@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum LeaveType {
+  SICK
+  VACATION
+  PERSONAL
+  MATERNITY
+  PATERNITY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum DocumentAccessLevel {
+  PUBLIC
+  DEPARTMENT
+  PRIVATE
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  role         UserRole  @default(EMPLOYEE)
+  department   String?
+  position     String?
+  avatarUrl    String?   @map("avatar_url")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  leaveRequests         LeaveRequest[]    @relation("UserLeaveRequests")
+  approvedLeaveRequests LeaveRequest[]    @relation("ApproverLeaveRequests")
+  documents             Document[]
+  notifications         Notification[]
+
+  @@map("users")
+}
+
+model LeaveRequest {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  leaveType      LeaveType    @map("leave_type")
+  startDate      DateTime     @map("start_date")
+  endDate        DateTime     @map("end_date")
+  reason         String?
+  status         LeaveStatus  @default(PENDING)
+  approvedBy     String?      @map("approved_by")
+  approvedAt     DateTime?    @map("approved_at")
+  rejectionReason String?     @map("rejection_reason")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  user     User   @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+  approver User?  @relation("ApproverLeaveRequests", fields: [approvedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([leaveType])
+  @@map("leave_requests")
+}
+
+model Document {
+  id            String              @id @default(uuid())
+  userId        String              @map("user_id")
+  title         String
+  description   String?
+  filePath      String              @map("file_path")
+  fileSize      Int                 @map("file_size")
+  fileType      String              @map("file_type")
+  category      String?
+  accessLevel   DocumentAccessLevel @map("access_level") @default(PRIVATE)
+  downloadCount Int                 @default(0) @map("download_count")
+  version       Int                 @default(1)
+  isDeleted     Boolean             @default(false) @map("is_deleted")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@index([accessLevel])
+  @@index([isDeleted])
+  @@map("documents")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// Refresh token model for JWT rotation
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// Audit log for security events
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  resource  String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
